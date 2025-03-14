@@ -8,5 +8,13 @@
     },
     "keywords": [],
     "author": "",
-    "license": "ISC"
+    "license": "ISC",
+    "dependencies": {
+        "@types/dotenv": "^8.2.3",
+        "@types/express": "^5.0.0",
+        "@types/pg": "^8.11.11",
+        "dotenv": "^16.4.7",
+        "express": "^4.21.2",
+        "pg": "^8.14.0"
+    }
 }
