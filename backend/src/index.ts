@@ -2,8 +2,10 @@ import dotenv from "dotenv";
 dotenv.config();
 import express, { Request, Response } from "express";
 import { Client } from "pg";
-const app = express();
+import cors from "cors";
 
+const app = express();
+app.use(cors())
 app.use(express.json());
 
 const pgClient = new Client(process.env.DB_CONNECTION_URL);
