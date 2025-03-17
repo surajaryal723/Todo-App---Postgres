@@ -12,64 +12,80 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
 const express_1 = __importDefault(require("express"));
-const pg_1 = require("pg");
 const cors_1 = __importDefault(require("cors"));
+const client_1 = require("@prisma/client");
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
-const pgClient = new pg_1.Client(process.env.DB_CONNECTION_URL);
-pgClient.connect();
-app.post("/add", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { title } = req.body;
-    const insertQuery = "INSERT INTO todos(title) VALUES($1);";
+const client = new client_1.PrismaClient();
+app.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    let { username, password } = req.body;
     try {
-        const result = yield pgClient.query(insertQuery, [title]);
+        let result = yield client.user.create({
+            data: {
+                username: username,
+                password: password,
+            },
+        });
         res.json({
-            message: "Todo Added Successfully",
+            userId: result.id,
         });
     }
     catch (e) {
         res.json({
-            message: 'Unable to add todo'
+            message: "Something went wrong!",
+        });
+    }
+}));
+app.post("/add", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    let { title, userId } = req.body;
+    try {
+        let result = yield client.todo.create({
+            data: {
+                title,
+                userId: Number(userId)
+            }
+        });
+        res.json({
+            message: 'Todo Added Successfully! '
+        });
+    }
+    catch (e) {
+        res.json({
+            message: 'Something went wrong'
         });
     }
 }));
 app.get('/todos', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        let todos = yield pgClient.query('SELECT * FROM todos;');
-        res.json({
-            todos: todos.rows
-        });
-    }
-    catch (e) {
-        res.json({
-            message: 'Not able to fetch todos at the moment!'
-        });
-    }
+    let todos = yield client.todo.findMany({
+        select: {
+            title: true,
+        }
+    });
+    res.json({
+        todos
+    });
 }));
 app.post('/update/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    let { title } = req.body;
     try {
-        yield pgClient.query(`UPDATE todos SET completed='true' WHERE ID='${req.params.id}'`);
+        let result = yield client.todo.update({
+            where: {
+                id: parseInt(req.params.id)
+            },
+            data: {
+                title
+            }
+        });
         res.json({
-            message: 'Todo updated'
+            message: 'Updated'
         });
     }
     catch (e) {
-        res.json('Something went wrong');
-    }
-}));
-app.delete('/delete/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        yield pgClient.query(`DELETE FROM todos WHERE ID='${req.params.id}'`);
         res.json({
-            message: 'Todo deleted'
+            message: 'Something went wring!'
         });
-    }
-    catch (e) {
-        res.json('Something went wrong');
     }
 }));
 app.listen(3000);
